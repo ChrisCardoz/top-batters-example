@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import "@material/web/checkbox/checkbox.js";
 
 @customElement("top-batters-example")
 export class TopBattersExample extends LitElement {
@@ -17,29 +18,12 @@ export class TopBattersExample extends LitElement {
       font-weight: 600;
       margin-bottom: 8px;
     }
-    ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      border: 1px solid #eee;
-      border-radius: 8px;
-      overflow: hidden;
-      max-width: 520px;
+    tr {
+      border: 1px solid #000;
+      padding: 8px 0;
     }
-    li {
-      padding: 8px 12px;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    li:last-child {
-      border-bottom: 0;
-    }
-    .avg {
-      font-variant-numeric: tabular-nums;
-      color: #444;
-      font-weight: 600;
+    tr:nth-child(even) {
+      background-color: #f5f5f5;
     }
   `;
 
@@ -58,16 +42,26 @@ export class TopBattersExample extends LitElement {
   render() {
     return html`
       <header>Top Batters Example</header>
-      <ul>
-        ${this.batters.map(
-          (b) => html`
-            <li>
-              <span>${b.name}</span>
-              <span class="avg">${b.avg.toFixed(3)}</span>
-            </li>
-          `
-        )}
-      </ul>
+      <table>
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Name</th>
+            <th>BA</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${this.batters.map(
+            (b) => html`
+              <tr>
+                <td><md-checkbox checked></md-checkbox></td>
+                <td>${b.name}</td>
+                <td class="avg">${b.avg.toFixed(3)}</td>
+              </tr>
+            `
+          )}
+        </tbody>
+      </table>
     `;
   }
 }
