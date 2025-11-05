@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import "@material/web/checkbox/checkbox.js";
+import "@material/web/button/filled-button.js";
 
 @customElement("top-batters-example")
 export class TopBattersExample extends LitElement {
@@ -111,18 +112,14 @@ export class TopBattersExample extends LitElement {
     this.selected = new Set();
   }
 
-  private toggle(name: string) {
-    const next = new Set(this.selected);
-    if (next.has(name)) next.delete(name);
-    else next.add(name);
-    this.selected = next;
-  }
-
-  private setChecked(name: string, checked: boolean) {
-    const next = new Set(this.selected);
-    if (checked) next.add(name);
-    else next.delete(name);
-    this.selected = next;
+  private updateSelection(name: string, checked: boolean) {
+    if (checked) {
+      this.selected.add(name);
+    } else {
+      this.selected.delete(name);
+    }
+    // Manually request an update because we are mutating the Set.
+    this.requestUpdate();
   }
 
   render() {
@@ -136,40 +133,47 @@ export class TopBattersExample extends LitElement {
             <th scope="col" class="num avg">AVG</th>
             <th scope="col" class="num obp">OBP</th>
             <th scope="col" class="num slg">SLG</th>
-            <th scope="col" class="num slg">OPS</th>
+            <th scope="col" class="num ops">OPS</th>
             <th scope="col" class="num rwar">rWAR</th>
           </tr>
         </thead>
         <tbody>
           ${this.batters.map((b) => {
             const checked = this.selected.has(b.name);
+            const isCheckboxDisabled = this.selected.size === 2 && !checked;
+            const ops = (b.obp + b.slg).toFixed(3);
             return html`
               <tr
                 class=${checked ? "selected" : ""}
-                @click=${() => this.toggle(b.name)}
+                @click=${() => this.updateSelection(b.name, !checked)}
               >
                 <td class="select">
                   <md-checkbox
                     .checked=${checked}
                     @change=${(e: Event) => {
                       e.stopPropagation();
-                      const target = e.currentTarget as any;
-                      this.setChecked(b.name, !!target.checked);
+                      const target = e.currentTarget as HTMLInputElement;
+                      this.updateSelection(b.name, target.checked);
                     }}
                     @click=${(e: Event) => e.stopPropagation()}
+                    ?disabled=${isCheckboxDisabled}
                   ></md-checkbox>
                 </td>
                 <td>${b.name}</td>
                 <td class="num avg">${b.avg.toFixed(3)}</td>
                 <td class="num obp">${b.obp.toFixed(3)}</td>
                 <td class="num slg">${b.slg.toFixed(3)}</td>
-                <td class="num ops">${(b.obp + b.slg).toFixed(3)}</td>
+                <td class="num ops">${ops}</td>
                 <td class="num rwar">${b.rWar.toFixed(1)}</td>
               </tr>
             `;
           })}
         </tbody>
       </table>
+      <br />
+      <md-filled-button ?disabled=${this.selected.size === 0}
+        >Compare</md-filled-button
+      >
     `;
   }
 }
