@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import "@material/web/checkbox/checkbox.js";
 import "@material/web/button/filled-button.js";
+import "@material/web/dialog/dialog.js";
 
 @customElement("top-batters-example")
 export class TopBattersExample extends LitElement {
@@ -81,6 +82,27 @@ export class TopBattersExample extends LitElement {
       text-align: center;
       white-space: nowrap;
     }
+    .comparison-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .comparison-table th,
+    .comparison-table td {
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .comparison-table th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+    .comparison-table td:first-child,
+    .comparison-table th:first-child {
+      text-align: left;
+      font-weight: 600;
+      background: #f9fafb;
+    }
   `;
 
   @state()
@@ -93,6 +115,8 @@ export class TopBattersExample extends LitElement {
   }>;
   @state()
   private declare selected: Set<string>;
+  @state()
+  private declare dialogOpen: boolean;
 
   constructor() {
     super();
@@ -110,6 +134,7 @@ export class TopBattersExample extends LitElement {
       { name: "Jeremy Peña", avg: 0.304, obp: 0.363, slg: 0.477, rWar: 5.6 },
     ];
     this.selected = new Set();
+    this.dialogOpen = false;
   }
 
   private updateSelection(name: string, checked: boolean) {
@@ -123,6 +148,21 @@ export class TopBattersExample extends LitElement {
   }
 
   render() {
+    const selectedBatters = this.batters.filter((b) =>
+      this.selected.has(b.name)
+    );
+    const statsToCompare = [
+      { key: "avg", label: "AVG", fixed: 3 },
+      { key: "obp", label: "OBP", fixed: 3 },
+      { key: "slg", label: "SLG", fixed: 3 },
+      {
+        key: "ops",
+        label: "OPS",
+        fixed: 3,
+        value: (b: any) => b.obp + b.slg,
+      },
+      { key: "rWar", label: "rWAR", fixed: 1 },
+    ];
     return html`
       <header>Top Batters Example</header>
       <table aria-label="Top batters: AVG, OBP, SLG, and WAR">
@@ -171,9 +211,59 @@ export class TopBattersExample extends LitElement {
         </tbody>
       </table>
       <br />
-      <md-filled-button ?disabled=${this.selected.size === 0}
+      <md-filled-button
+        ?disabled=${this.selected.size === 0}
+        @click=${() => {
+          this.dialogOpen = true;
+        }}
         >Compare</md-filled-button
       >
+      <md-dialog
+        ?open=${this.dialogOpen}
+        @closed=${() => (this.dialogOpen = false)}
+      >
+        <div slot="headline">Comparison</div>
+        <div slot="content">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Stat</th>
+                ${selectedBatters.map((b) => html`<th>${b.name}</th>`)}
+              </tr>
+            </thead>
+            <tbody>
+              ${statsToCompare.map((stat) => {
+                if (selectedBatters.length === 0) return;
+
+                const values = selectedBatters.map((b) =>
+                  stat.value ? stat.value(b) : (b as any)[stat.key]
+                );
+                const maxValue = Math.max(...values);
+
+                return html`
+                  <tr>
+                    <td>${stat.label}</td>
+                    ${selectedBatters.map((b, index) => {
+                      const value = values[index];
+                      const isMax = value === maxValue;
+                      const content = isMax
+                        ? html`<strong>${value.toFixed(stat.fixed)}</strong>`
+                        : value.toFixed(stat.fixed);
+
+                      return html`<td>${content}</td>`;
+                    })}
+                  </tr>
+                `;
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div slot="actions">
+          <md-filled-button @click=${() => (this.dialogOpen = false)}>
+            Close
+          </md-filled-button>
+        </div>
+      </md-dialog>
     `;
   }
 }
